@@ -7,22 +7,38 @@ import plotly.express as px
 import geopandas as gpd
 import gdown
 import os
-
+import  joblib, streamlit as st
 # =====================
 # Load models (joblib)
 # =====================
-def safe_load_model(path: str):
-    if not os.path.exists(path):
-        st.error(f"לא נמצא קובץ המודל: {path}")
-        return None
-    try:
-        return joblib.load(path)
-    except Exception as e:
-        st.error(f"שגיאה בטעינת מודל מ־{path}: {e}")
-        return None
+BUREAU_ID   = st.secrets.get("BUREAU_ID",   "1zh96IH3iDFVNdbK7vObRXx-1Mlcd4_HJ")
+CATEGORY_ID = st.secrets.get("CATEGORY_ID", "1_zPJrP3y8ciD675jf2uqQkWNht9fImqb")
 
-model_bureau   = safe_load_model("BUREAU_random_forest.pkl")
-model_category = safe_load_model("Category_random_forest.pkl")
+@st.cache_resource(show_spinner="Downloading/Loading models…")
+def load_models():
+    os.makedirs("models", exist_ok=True)
+    bur_path = "models/BUREAU_random_forest.pkl"
+    cat_path = "models/Category_random_forest.pkl"
+
+    # הורדה מדרייב אם חסר
+    if not os.path.exists(bur_path):
+        gdown.download(f"https://drive.google.com/uc?id={BUREAU_ID}", bur_path, quiet=False)
+    if not os.path.exists(cat_path):
+        gdown.download(f"https://drive.google.com/uc?id={CATEGORY_ID}", cat_path, quiet=False)
+
+    # טעינה עם joblib
+    model_bureau   = joblib.load(bur_path)
+    model_category = joblib.load(cat_path)
+    return model_bureau, model_category
+
+try:
+    model_bureau, model_category = load_models()
+except Exception as e:
+    st.error(f"טעינת מודלים נכשלה: {e}")
+    model_bureau = None
+    model_category = None
+
+
 
 # =====================
 # Metadata (categories & bureaus)
