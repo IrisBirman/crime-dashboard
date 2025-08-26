@@ -1,3 +1,4 @@
+Remove app.py
 import os
 import json
 import requests
@@ -163,3 +164,4 @@ if submitted:
             title="Predicted Category Highlighted"
         )
         st.plotly_chart(fig, use_container_width=True)
+
